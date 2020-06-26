@@ -1,0 +1,28 @@
+---
+title: "Developing Data Products - R Markdown and Leaflet"
+author: "Jonathan Di Cosmo"
+date: "26/06/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Stadiums of the 2019-20 Premier League Teams
+
+```{r, echo = FALSE, message = FALSE}
+library(leaflet)
+data = read.csv('PremierLeague2020Grounds.csv', stringsAsFactors = FALSE)
+data$lat <- with(data, LatD + LatM/60 + LatS/3600)
+data$lng <- with(data, ifelse(LonD > 0, LonD + LonM/60 + LonS/3600, LonD - LonM/60 - LonS/3600))
+data$popup <- with(data, paste(Team, ": ", Stadium))
+ball <- makeIcon(
+  iconUrl = "ball.png",
+  iconWidth = 36, iconHeight = 36, iconAnchorX = 18, iconAnchorY = 18
+)
+data %>% 
+  leaflet(width = "100%", height = 600) %>% 
+  addTiles() %>% 
+  addMarkers(popup = data$popup, clusterOptions = markerClusterOptions(), icon = ball)
+```
