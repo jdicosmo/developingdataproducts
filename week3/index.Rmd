@@ -1,0 +1,63 @@
+---
+title: "Developing Data Products - R Markdown and Plotly"
+author: "Jonathan Di Cosmo"
+date: "28/06/2020"
+output: ioslides_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+## Content
+
+This presentation illustrates the capacities of Plotly. The data represent the number of deaths of Covid-19 by country from 22/01/2020 to 27/06/2020. It is available [here](https://github.com/CSSEGISandData/COVID-19/blob/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_global.csv).
+
+We show:
+
+* A comparison of the number of deaths between countries,
+* The evolution in time for a few countries,
+* A choropleth map.
+
+Warning: it would be better to compare the ratio of the number of deaths to the total population.
+
+## Deaths per country on 27th June 2020
+
+```{r message=FALSE, warning=FALSE}
+library(plotly)
+data <- read.csv('time_series_covid19_deaths_global.csv')
+data20 <- data[order(data$X6.27.20, decreasing = TRUE), c('Country.Region', 'X6.27.20')]
+data20 <- data20[1:20,]
+row.names(data20) <- NULL
+data20$Country.Region = factor(data20$Country.Region, levels = unique(data20$Country.Region))
+plot_ly(data = data20, x = ~Country.Region, y = ~X6.27.20, type = "bar") %>% 
+  layout(xaxis = list(title = "Country"), yaxis = list(title = "Number of deaths"))
+```
+
+## Evolution in 4 countries
+
+```{r message=FALSE, warning=FALSE}
+library(lubridate)
+ti <- seq(from = as.Date("2020-01-22"), to = as.Date("2020-06-27"), by = 1)
+countries <- c("US", "Brazil", "Italy", "Belgium")
+dataC <- as.data.frame(matrix(0, ncol = length(countries), nrow = 158))
+for (i in 1:length(countries))
+{
+  dataC[, i] <- t(data[data$Country.Region == countries[i] & data$Province.State == "", 5:162])
+}
+row.names(dataC) <- NULL
+colnames(dataC) <- countries
+plot_ly(x = ti, y = ~US, data = dataC, type = "scatter", mode = "lines", name = "US") %>% 
+  add_trace(y = ~Brazil, name = 'Brazil') %>%
+  add_trace(y = ~Italy, name = 'Italy') %>%
+  add_trace(y = ~Belgium, name = 'Belgium') %>%
+  layout(xaxis = list(title = "Date"), yaxis = list(title = "Number of deaths"))
+```
+
+## Choropleth map
+
+```{r message=FALSE, warning=FALSE}
+data <- aggregate(data$X6.27.20, by=list(Country=data$Country.Region), FUN=sum)
+plot_ly(z = data$x, locations = data$Country, type = "choropleth", locationmode = "country names", colorscale = "")
+```
+
